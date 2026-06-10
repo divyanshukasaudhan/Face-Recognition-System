@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="card p-3">
+      <h4 class="mb-2">Mark Attendance</h4>
+      <p class="text-muted mb-2">Allow camera + location. Then click Entry or Exit.</p>
+
+      <div class="d-flex gap-2 mb-2">
+        <button class="btn btn-success" id="btnEntry" type="button">✅ Entry</button>
+        <button class="btn btn-warning" id="btnExit" type="button">🚪 Exit</button>
+      </div>
+
+      <div class="small text-muted">
+        <div>Location: <span id="locText">Not detected</span></div>
+      </div>
+
+      <hr>
+      <div id="result" class="mt-2"></div>
+    </div>
+
+    <div class="card p-3 mt-3">
+      <h6 class="mb-1">Viva Points</h6>
+      <ul class="small text-muted mb-0">
+        <li>Face Recognition: LBPH classifier (OpenCV)</li>
+        <li>Geo Check: Haversine distance</li>
+        <li>Rules: prevent duplicate entry</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card p-3">
+      <h5 class="mb-2">Webcam</h5>
+      <video id="video" autoplay playsinline style="width:100%; border-radius:12px; background:#000;"></video>
+      <canvas id="canvas" style="display:none;"></canvas>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const locText = document.getElementById("locText");
+const result = document.getElementById("result");
+
+let lat=null, lng=null;
+
+async function startCam(){
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 960, height: 540 } });
+    video.srcObject = stream;
+  }catch(e){
+    result.innerHTML = "<div class='alert alert-danger'>Camera permission denied.</div>";
+  }
+}
+
+function getLocation(){
+  if(!navigator.geolocation){
+    locText.innerText = "Not supported";
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      lat = pos.coords.latitude;
+      lng = pos.coords.longitude;
+      locText.innerText = lat.toFixed(5) + ", " + lng.toFixed(5);
+    },
+    (err) => {
+      locText.innerText = "Permission denied / unavailable";
+    },
+    { enableHighAccuracy:true, timeout:10000 }
+  );
+}
+
+function captureFrame(){
+  const w = video.videoWidth, h = video.videoHeight;
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0, w, h);
+  return canvas.toDataURL("image/jpeg", 0.92);
+}
+
+async function mark(action){
+  const img = captureFrame();
+  const form = new FormData();
+  form.append("action", action);
+  form.append("image", img);
+  if(lat !== null && lng !== null){
+    form.append("lat", lat);
+    form.append("lng", lng);
+  }
+  result.innerHTML = "<div class='alert alert-info'>Processing...</div>";
+  const res = await fetch("/attendance/mark/", {
+    method:"POST",
+    headers:{ "X-CSRFToken": "{{ csrf_token }}" },
+    body: form
+  });
+  const data = await res.json();
+  if(data.ok){
+    result.innerHTML = "<div class='alert alert-success'><b>✅ " + data.status + "</b><br>Student: <b>" + data.student + "</b><br>" + data.message + "</div>";
+  }else{
+    result.innerHTML = "<div class='alert alert-warning'><b>⚠ " + (data.status || "FAILED") + "</b><br>" + (data.student ? ("Student: <b>"+data.student+"</b><br>") : "") + (data.message || data.error || "Try again") + "</div>";
+  }
+}
+
+document.getElementById("btnEntry").addEventListener("click", ()=>mark("ENTRY"));
+document.getElementById("btnExit").addEventListener("click", ()=>mark("EXIT"));
+
+startCam();
+getLocation();
+</script>
+{% endblock %}

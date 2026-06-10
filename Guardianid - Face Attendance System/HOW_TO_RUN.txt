@@ -1,0 +1,142 @@
+GUARDIAN ID - FACE RECOGNITION ATTENDANCE SYSTEM
+===============================================
+
+REQUIREMENTS:
+- Python 3.8+
+- Windows/Mac/Linux
+- Webcam access
+- Internet connection (for initial setup)
+
+SETUP INSTRUCTIONS:
+==================
+
+1. EXTRACT/CLONE PROJECT:
+   - Extract the guardianid folder to your desired location
+   - Open terminal/command prompt in the project folder
+
+2. CREATE VIRTUAL ENVIRONMENT:
+   python -m venv .venv
+
+3. ACTIVATE VIRTUAL ENVIRONMENT:
+   Windows: .venv\Scripts\activate
+   Mac/Linux: source .venv/bin/activate
+
+4. INSTALL DEPENDENCIES:
+   pip install -r requirements.txt
+   pip install Pillow
+
+5. SETUP DATABASE:
+   python manage.py migrate
+
+6. CREATE ADMIN USER (FIRST TIME ONLY):
+   python manage.py createsuperuser
+   - Enter username, email, password when prompted
+
+HOW TO RUN THE APPLICATION:
+==========================
+
+1. ACTIVATE VIRTUAL ENVIRONMENT (if not active):
+   Windows: .venv\Scripts\activate
+   Mac/Linux: source .venv/bin/activate
+
+2. START THE SERVER:
+   python manage.py runserver
+
+3. OPEN IN BROWSER:
+   http://127.0.0.1:8000/
+
+4. LOGIN:
+   - Use the admin credentials you created
+
+APPLICATION USAGE:
+=================
+
+FIRST TIME SETUP:
+1. Go to Settings → Campus Settings
+2. Set your campus coordinates (latitude, longitude)
+3. Set allowed radius (e.g., 200 meters)
+4. Set allowed time window (optional)
+
+STUDENT MANAGEMENT:
+1. Go to Students
+2. Add students with roll numbers and names
+3. Students must be added before face enrollment
+
+FACE ENROLLMENT:
+1. Go to Enroll
+2. Select a student from dropdown
+3. Allow camera access
+4. Capture 5-10 face samples per student
+5. Click "Train Model" after enrollment
+
+ATTENDANCE MARKING:
+1. Go to Attendance
+2. Allow camera and location access
+3. Click Entry/Exit buttons
+4. System will recognize face and check location
+
+REPORTS:
+1. Go to Reports
+2. Filter by date range or student
+3. Export to CSV if needed
+
+TROUBLESHOOTING:
+===============
+
+COMMON ISSUES:
+
+1. "Pillow not installed" error:
+   Solution: pip install Pillow
+
+2. "Location UNKNOWN":
+   Solution: Configure campus coordinates in Settings
+
+3. Camera not working:
+   Solution: Allow camera permissions in browser
+
+4. Face recognition not working:
+   Solution: Ensure students are enrolled and model is trained
+
+5. "Server not starting":
+   Solution: Check if port 8000 is free, or use: python manage.py runserver 8080
+
+6. "Module not found" errors:
+   Solution: Ensure virtual environment is activated
+
+DEFAULT CREDENTIALS:
+===================
+- Username: admin (or whatever you set)
+- Password: (whatever you set during createsuperuser)
+
+PORT CONFIGURATION:
+==================
+Default: http://127.0.0.1:8000/
+Custom port: python manage.py runserver 8080
+
+STOPPING THE SERVER:
+===================
+Press Ctrl+C in the terminal
+
+FEATURES:
+=========
+✓ Face Recognition (LBPH classifier)
+✓ Location Verification (GPS + Campus radius)
+✓ Attendance Reports & Export
+✓ Student Management
+✓ Campus Configuration
+✓ Time Window Restrictions
+
+BROWSER COMPATIBILITY:
+=====================
+✓ Chrome (Recommended)
+✓ Firefox
+✓ Edge
+✓ Safari
+
+SUPPORT:
+========
+- Check browser console for JavaScript errors
+- Ensure all permissions are granted
+- Use Chrome Developer Tools for debugging
+
+Last Updated: February 12, 2026

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="card p-3">
+      <h5 class="mb-2">1) Select Student</h5>
+      <select id="studentSelect" class="form-select">
+        <option value="">-- Choose Student --</option>
+        {% for s in students %}
+          <option value="{{ s.id }}">{{ s.roll_no }} - {{ s.name }}</option>
+        {% endfor %}
+      </select>
+      <div class="text-muted small mt-2">
+        Tip: Capture 5–10 samples per student for better recognition.
+      </div>
+
+      <hr>
+      <h5 class="mb-2">2) Capture Samples</h5>
+      <div class="d-flex gap-2">
+        <button id="btnCapture" class="btn btn-primary" type="button">Capture & Save</button>
+        <a class="btn btn-outline-dark" href="/train/">Train Model</a>
+      </div>
+      <div id="status" class="mt-3 small text-muted"></div>
+    </div>
+
+    <div class="card p-3 mt-3">
+      <h6 class="mb-1">Common Issues</h6>
+      <ul class="small text-muted mb-0">
+        <li>Keep face centered, good light.</li>
+        <li>Remove cap/mask for enrollment.</li>
+        <li>If "No face detected", move closer.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card p-3">
+      <h5 class="mb-2">Webcam</h5>
+      <video id="video" autoplay playsinline style="width:100%; border-radius:12px; background:#000;"></video>
+      <canvas id="canvas" style="display:none;"></canvas>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const statusBox = document.getElementById("status");
+const btnCapture = document.getElementById("btnCapture");
+const studentSelect = document.getElementById("studentSelect");
+
+async function startCam(){
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 960, height: 540 } });
+    video.srcObject = stream;
+  }catch(e){
+    statusBox.innerHTML = "<span class='text-danger'>Camera permission denied.</span>";
+  }
+}
+
+function captureFrame(){
+  const w = video.videoWidth, h = video.videoHeight;
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0, w, h);
+  return canvas.toDataURL("image/jpeg", 0.92);
+}
+
+btnCapture.addEventListener("click", async () => {
+  const sid = studentSelect.value;
+  if(!sid){
+    statusBox.innerHTML = "<span class='text-danger'>Please select a student first.</span>";
+    return;
+  }
+  const img = captureFrame();
+  const form = new FormData();
+  form.append("student_id", sid);
+  form.append("image", img);
+
+  statusBox.innerHTML = "Saving sample...";
+  const res = await fetch("/enroll/capture/", {
+    method:"POST",
+    headers:{ "X-CSRFToken": "{{ csrf_token }}" },
+    body: form
+  });
+  const data = await res.json();
+  if(data.ok){
+    statusBox.innerHTML = "<span class='text-success'>✅ Sample saved.</span>";
+  }else{
+    statusBox.innerHTML = "<span class='text-danger'>❌ " + (data.error || "Failed") + "</span>";
+  }
+});
+
+startCam();
+</script>
+{% endblock %}
